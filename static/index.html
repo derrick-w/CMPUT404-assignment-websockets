@@ -6,7 +6,7 @@
     <meta content='width=device-width; height=device-height; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;' name='viewport' />
     <meta name="viewport" content="width=device-width" />
     <meta name="license" content="
-        Copyright 2013 Google, Abram Hindle
+        Copyright 2013 Google, Abram Hindle, Derrick Wai
         
         Licensed under the Apache License, Version 2.0 (the "License");
         you may not use this file except in compliance with the License.
@@ -125,6 +125,10 @@ function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just modified!
+    var dict = {};
+    dict[entity] = data;
+    var dataToSend = JSON.stringify(dict);
+    socket.send(dataToSend);
 }
 var counter = 0;
 function addEntityWithoutName(data) {
@@ -231,16 +235,19 @@ mouse = (function() {
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
+    addEntityWithoutName({'x':x,'y':y,'colour':'orange'});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red'});
+    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
 });
 
+// used random color generation from assignment 4
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
-                          'radius':10});
+    randcolour = 'rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')';
+    // random color generation from https://www.sitepoint.com/generating-random-color-values/
+    addEntityWithoutName({'x':x,'y':y,'colour':randcolour,
+                          'radius':2});
 });
 
 
@@ -261,7 +268,11 @@ function wsSetup() {
     socket.onmessage = function(msg) {  
         try {
             debug("WebSocket Recv:" + msg.data);
-            //XXX: TODO What are you going to do here?            
+            //XXX: TODO What are you going to do here?
+            var message = JSON.parse(msg.data);
+            var key = Object.keys(message);
+            world[key] = message[key];
+            drawNextFrame();
         } catch (e) {
             alert("socket on message: " + e);
         }
